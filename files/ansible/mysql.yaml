@@ -1,0 +1,77 @@
+---
+- hosts: all
+  become: yes
+  become_user: root
+  become_method: sudo
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  vars_files:
+    - vars/default.yml
+  tasks:
+    - name: Configure hostname
+      hostname:
+        name: centos.mysql.local
+    - name: Install EPEL-Release
+      dnf:
+        name: epel-release
+        state: present
+        update_cache: yes
+    - name: Install MySQL packages
+      dnf:
+        name: "{{ packages }}"
+        update_cache: yes
+      vars:
+        packages:
+          - mysql-server
+          - python3
+          - python3-pip
+          - python3-PyMySQL
+    - name: Initialize mysqld service
+      service:
+        name: mysqld
+        state: started
+        enabled: yes
+    - name: Define MySQL root password
+      mysql_user:
+        login_host: 'localhost'
+        login_user: 'root'
+        login_password: ''
+        name: 'root'
+        password: "{{ MYSQL_ROOT_PASSWORD }}"
+        state: present
+    - name: Create database for wordpress
+      mysql_db:
+        name: "{{ WORDPRESS_DATABASE }}"
+        state: present
+        login_user: root
+        login_password: "{{ MYSQL_ROOT_PASSWORD }}"
+    - name: Create MySQL user for WordPress
+      mysql_user:
+        name: "{{ WORDPRESS_USER }}"
+        password: "{{ WORDPRESS_USER_PASSWORD }}"
+        priv: "{{ WORDPRESS_DATABASE }}.*:ALL"
+        host: '%'
+        state: present
+        login_user: root
+        login_password: "{{ MYSQL_ROOT_PASSWORD }}"
+    - name: Enable remote login to MySQL
+      lineinfile:
+        path: /etc/my.cnf.d/mysql-server.cnf
+        line: 'bind-address = 0.0.0.0'
+        backup: yes
+      notify:
+        - Restart mysql
+    - name: Disable SELinux Without Reboot
+      shell: /sbin/setenforce 0
+    - name: Stop and disable firewalld.
+      service:
+        name: firewalld
+        state: stopped
+        enabled: False
+    - name: Update timezone
+      shell: timedatectl set-timezone America/Sao_Paulo
+  handlers:
+    - name: Restart mysql
+      service:
+        name: mysqld
+        state: restarted

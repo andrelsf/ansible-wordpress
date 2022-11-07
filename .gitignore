@@ -1,2 +1,3 @@
 .vagrant/
 files/ansible/latest.tar.gz
+files/ansible/vars/default.yml

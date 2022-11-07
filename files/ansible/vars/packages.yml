@@ -1,0 +1,22 @@
+packages:
+  - python3
+  - python3-pip
+  - git
+  - wget
+  - vim
+  - unzip
+  - net-tools
+  - httpd
+  - httpd-tools
+  - php 
+  - php-json
+  - php-curl 
+  - php-pear
+  - php-mbstring
+  - php-pdo
+  - php-gd
+  - php-mysqlnd
+  - php-IDNA_Convert
+  - php-enchant
+  - enchant 
+  - hunspell

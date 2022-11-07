@@ -5,46 +5,22 @@
   become_method: sudo
   vars:
     ansible_python_interpreter: /usr/bin/python3
+  vars_files:
+    - vars/packages.yml
   tasks:
     - name: Configure hostname
       hostname:
         name: centos.wordpress.local
-    
     - name: Install EPEL-Release
       dnf:
         name: epel-release
         state: present
         update_cache: yes
-    
     - name: Install Dependecies
       dnf:
         name: "{{ packages }}"
         state: present
         update_cache: yes
-      vars:
-        packages:
-          - python3
-          - python3-pip
-          - git
-          - wget
-          - vim
-          - unzip
-          - net-tools
-          - httpd
-          - httpd-tools
-          - php 
-          - php-json
-          - php-curl 
-          - php-pear
-          - php-mbstring
-          - php-pdo
-          - php-gd
-          - php-mysqlnd
-          - php-IDNA_Convert
-          - php-enchant
-          - enchant 
-          - hunspell
-    
     - name: Configure PHP-FPM
       lineinfile:
         path: /etc/php-fpm.d/www.conf
@@ -57,35 +33,42 @@
         - php_value[max_input_time]=600
         - php_value[max_input_vars]=2000
         - php_value[date.timezone]=America/Sao_Paulo
-    
     - name: Reload PHP-FPM
       service:
         name: php-fpm
         state: reloaded
-    
     - name: Get Wordpress latest
       shell: |
         curl -O https://wordpress.org/latest.tar.gz \
-        && tar zxvf latest.tar.gz -C /var/www/ \
-        && chown -R apache. /var/www/wordpress
-    
-    - name: Adding wordress config file
+        && tar zxvf latest.tar.gz -C /var/www/
+    - name: Set permission
+      file:
+        path: /var/www/wordpress
+        state: directory
+        owner: apache
+        group: apache
+        recurse: yes
+    - name: Adding wordress config file httpd
       copy:
         src: wordpress.conf
         dest: /etc/httpd/conf.d/
         mode: 0644
-
     - name: Update httpd.conf
       lineinfile:
         path: /etc/httpd/conf/httpd.conf
         search_string: 'DirectoryIndex index.html'
         line: 'DirectoryIndex index.html index.php'
-    
+    - name: Disable SELinux Without Reboot
+      shell: /sbin/setenforce 0
+    - name: Stop and disable firewalld.
+      service:
+        name: firewalld
+        state: stopped
+        enabled: False
     - name: Initialize Httpd
       service:
         name: httpd
         state: started
         enabled: yes
-    
     - name: Update timezone
       shell: timedatectl set-timezone America/Sao_Paulo
