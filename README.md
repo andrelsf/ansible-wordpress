@@ -8,6 +8,7 @@
 ## Atividade MIT DevOps e Cloud SENAI FATESG
 
 * Requirimentos
+    - Vagrant
     - Virtualbox 6.x
 
 Provisionamento de uma instancia AlmaLinux8 usando Ansible playbook para configurar e implementar ambiente com WordPress.
